@@ -19,21 +19,11 @@ interface UserActivity {
 	lastActivity: string;
 }
 
-interface ExamResult {
-	userId: string;
-	userName: string;
-	examType: string;
-	examDate: string;
-	result: 'pass' | 'fail' | 'pending';
-	totalBetAmount: number;
-	affectedBets: number;
-}
 
 export default function AdminDashboard() {
 	const [stats, setStats] = useState<DashboardStats | null>(null);
 	const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
-	const [examResults, setExamResults] = useState<ExamResult[]>([]);
-	const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'exams'>('overview');
+	const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview');
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -78,46 +68,11 @@ export default function AdminDashboard() {
 				}
 			]);
 
-			setExamResults([
-				{
-					userId: '3',
-					userName: '박민수',
-					examType: 'SQLD',
-					examDate: '2024-07-30',
-					result: 'pass',
-					totalBetAmount: 3200000,
-					affectedBets: 45
-				},
-				{
-					userId: '1',
-					userName: '김철수',
-					examType: '정보처리기사',
-					examDate: '2024-08-15',
-					result: 'pending',
-					totalBetAmount: 2500000,
-					affectedBets: 38
-				},
-				{
-					userId: '2',
-					userName: '이영희',
-					examType: 'AWS Solutions Architect',
-					examDate: '2024-08-20',
-					result: 'pending',
-					totalBetAmount: 1800000,
-					affectedBets: 27
-				}
-			]);
 
 			setLoading(false);
 		}, 1000);
 	}, []);
 
-	const handleResultUpdate = (userId: string, result: 'pass' | 'fail') => {
-		setExamResults(prev => prev.map(exam => 
-			exam.userId === userId ? { ...exam, result } : exam
-		));
-		alert(`${examResults.find(e => e.userId === userId)?.userName}의 시험 결과가 ${result === 'pass' ? '합격' : '불합격'}으로 업데이트되었습니다.`);
-	};
 
 	if (loading) {
 		return (
@@ -132,7 +87,7 @@ export default function AdminDashboard() {
 			<div className="mb-6">
 				<h2 className="text-2xl font-bold text-gray-900 mb-2">관리자 대시보드</h2>
 				<p className="text-gray-600">
-					플랫폼 전체 현황을 모니터링하고 시험 결과를 관리할 수 있습니다.
+					플랫폼 전체 현황을 모니터링할 수 있습니다.
 				</p>
 			</div>
 
@@ -141,12 +96,11 @@ export default function AdminDashboard() {
 				<div className="flex space-x-4">
 					{[
 						{ key: 'overview', label: '전체 현황' },
-						{ key: 'users', label: '사용자 활동' },
-						{ key: 'exams', label: '시험 결과 관리' }
+						{ key: 'users', label: '사용자 활동' }
 					].map(({ key, label }) => (
 						<button
 							key={key}
-							onClick={() => setActiveTab(key as 'overview' | 'users' | 'exams')}
+							onClick={() => setActiveTab(key as 'overview' | 'users')}
 							className={`px-4 py-2 rounded-lg font-medium ${
 								activeTab === key
 									? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
@@ -271,79 +225,6 @@ export default function AdminDashboard() {
 				</div>
 			)}
 
-			{/* 시험 결과 관리 */}
-			{activeTab === 'exams' && (
-				<div>
-					<div className="bg-white rounded-lg shadow overflow-hidden">
-						<div className="px-6 py-4 border-b border-gray-200">
-							<h3 className="text-lg font-medium text-gray-900">시험 결과 관리</h3>
-							<p className="text-sm text-gray-600 mt-1">
-								시험 결과를 입력하면 관련된 모든 배팅이 자동으로 정산됩니다.
-							</p>
-						</div>
-						<div className="divide-y divide-gray-200">
-							{examResults.map((exam) => (
-								<div key={exam.userId} className="p-6">
-									<div className="flex justify-between items-start mb-4">
-										<div>
-											<h4 className="text-lg font-medium text-gray-900">{exam.userName}</h4>
-											<div className="text-sm text-gray-600">
-												{exam.examType} • {exam.examDate}
-											</div>
-										</div>
-										<span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-											exam.result === 'pass' ? 'bg-green-100 text-green-800' :
-											exam.result === 'fail' ? 'bg-red-100 text-red-800' :
-											'bg-yellow-100 text-yellow-800'
-										}`}>
-											{exam.result === 'pass' ? '합격' :
-											 exam.result === 'fail' ? '불합격' : '결과 대기'}
-										</span>
-									</div>
-
-									<div className="grid grid-cols-2 gap-4 mb-4">
-										<div>
-											<div className="text-sm text-gray-600">총 배팅액</div>
-											<div className="text-lg font-semibold text-green-600">
-												₩{exam.totalBetAmount.toLocaleString()}
-											</div>
-										</div>
-										<div>
-											<div className="text-sm text-gray-600">영향받는 배팅</div>
-											<div className="text-lg font-semibold text-blue-600">
-												{exam.affectedBets}개
-											</div>
-										</div>
-									</div>
-
-									{exam.result === 'pending' && (
-										<div className="flex space-x-3">
-											<button
-												onClick={() => handleResultUpdate(exam.userId, 'pass')}
-												className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium"
-											>
-												합격 처리
-											</button>
-											<button
-												onClick={() => handleResultUpdate(exam.userId, 'fail')}
-												className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
-											>
-												불합격 처리
-											</button>
-										</div>
-									)}
-
-									{exam.result !== 'pending' && (
-										<div className="text-sm text-gray-500">
-											✅ 정산 완료 - 모든 관련 배팅이 처리되었습니다.
-										</div>
-									)}
-								</div>
-							))}
-						</div>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }

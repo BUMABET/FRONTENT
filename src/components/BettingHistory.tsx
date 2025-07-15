@@ -5,21 +5,18 @@ interface Bet {
 	type: 'single' | 'parlay';
 	amount: number;
 	createdAt: string;
-	status: 'pending' | 'won' | 'lost';
+	status: 'pending';
 	potentialWin: number;
-	actualWin?: number;
 	legs: {
 		targetName: string;
-		examType: string;
 		choice: 'pass' | 'fail';
 		odds: number;
-		result?: 'pass' | 'fail';
 	}[];
 }
 
 export default function BettingHistory() {
 	const [bets, setBets] = useState<Bet[]>([]);
-	const [filter, setFilter] = useState<'all' | 'pending' | 'won' | 'lost'>('all');
+	const [filter, setFilter] = useState<'all' | 'pending'>('all');
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -31,39 +28,31 @@ export default function BettingHistory() {
 					type: 'single',
 					amount: 50000,
 					createdAt: '2024-07-28 14:30',
-					status: 'won',
+					status: 'pending',
 					potentialWin: 92500,
-					actualWin: 92500,
 					legs: [{
 						targetName: '박민수',
-						examType: 'SQLD',
 						choice: 'pass',
-						odds: 1.85,
-						result: 'pass'
+						odds: 1.85
 					}]
 				},
 				{
 					id: '2',
 					type: 'parlay',
-					amount: 30000,
+					amount: 80000,
 					createdAt: '2024-07-29 09:15',
-					status: 'lost',
-					potentialWin: 189000,
-					actualWin: 0,
+					status: 'pending',
+					potentialWin: 276800,
 					legs: [
 						{
 							targetName: '김철수',
-							examType: '정보처리기사',
 							choice: 'pass',
-							odds: 1.85,
-							result: 'pass'
+							odds: 1.85
 						},
 						{
 							targetName: '이영희',
-							examType: 'AWS Solutions Architect',
 							choice: 'fail',
-							odds: 2.1,
-							result: 'pass'
+							odds: 1.75
 						}
 					]
 				},
@@ -76,7 +65,6 @@ export default function BettingHistory() {
 					potentialWin: 220000,
 					legs: [{
 						targetName: '최지혜',
-						examType: 'TOEIC',
 						choice: 'fail',
 						odds: 2.2
 					}]
@@ -90,7 +78,6 @@ export default function BettingHistory() {
 					potentialWin: 142500,
 					legs: [{
 						targetName: '정우진',
-						examType: '컴활 1급',
 						choice: 'pass',
 						odds: 1.9
 					}]
@@ -98,20 +85,18 @@ export default function BettingHistory() {
 				{
 					id: '5',
 					type: 'parlay',
-					amount: 40000,
+					amount: 60000,
 					createdAt: '2024-08-01 13:10',
 					status: 'pending',
-					potentialWin: 144000,
+					potentialWin: 228000,
 					legs: [
 						{
 							targetName: '김철수',
-							examType: '정보처리기사',
 							choice: 'pass',
-							odds: 1.8
+							odds: 1.9
 						},
 						{
 							targetName: '정우진',
-							examType: '컴활 1급',
 							choice: 'fail',
 							odds: 2.0
 						}
@@ -127,11 +112,8 @@ export default function BettingHistory() {
 	const totalStats = {
 		totalBets: bets.length,
 		totalAmount: bets.reduce((sum, bet) => sum + bet.amount, 0),
-		totalWon: bets.filter(bet => bet.status === 'won').reduce((sum, bet) => sum + (bet.actualWin || 0), 0),
-		pending: bets.filter(bet => bet.status === 'pending').length,
-		winRate: bets.filter(bet => bet.status !== 'pending').length > 0 
-			? (bets.filter(bet => bet.status === 'won').length / bets.filter(bet => bet.status !== 'pending').length * 100).toFixed(1)
-			: '0'
+		pending: bets.length,
+		totalPotentialWin: bets.reduce((sum, bet) => sum + bet.potentialWin, 0)
 	};
 
 	if (loading) {
@@ -152,7 +134,7 @@ export default function BettingHistory() {
 			</div>
 
 			{/* 통계 카드 */}
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+			<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
 				<div className="bg-white rounded-lg shadow p-4">
 					<div className="text-sm text-gray-600">총 배팅 수</div>
 					<div className="text-2xl font-bold text-blue-600">{totalStats.totalBets}</div>
@@ -164,14 +146,10 @@ export default function BettingHistory() {
 					</div>
 				</div>
 				<div className="bg-white rounded-lg shadow p-4">
-					<div className="text-sm text-gray-600">총 당첨금</div>
+					<div className="text-sm text-gray-600">예상 당첨금</div>
 					<div className="text-2xl font-bold text-green-600">
-						₩{totalStats.totalWon.toLocaleString()}
+						₩{totalStats.totalPotentialWin.toLocaleString()}
 					</div>
-				</div>
-				<div className="bg-white rounded-lg shadow p-4">
-					<div className="text-sm text-gray-600">승률</div>
-					<div className="text-2xl font-bold text-orange-600">{totalStats.winRate}%</div>
 				</div>
 			</div>
 
@@ -180,13 +158,11 @@ export default function BettingHistory() {
 				<div className="flex space-x-2">
 					{[
 						{ key: 'all', label: '전체', count: bets.length },
-						{ key: 'pending', label: '진행중', count: bets.filter(b => b.status === 'pending').length },
-						{ key: 'won', label: '당첨', count: bets.filter(b => b.status === 'won').length },
-						{ key: 'lost', label: '낙첨', count: bets.filter(b => b.status === 'lost').length }
+						{ key: 'pending', label: '진행중', count: bets.filter(b => b.status === 'pending').length }
 					].map(({ key, label, count }) => (
 						<button
 							key={key}
-							onClick={() => setFilter(key as 'all' | 'pending' | 'won' | 'lost')}
+							onClick={() => setFilter(key as 'all' | 'pending')}
 							className={`px-4 py-2 rounded-lg text-sm font-medium ${
 								filter === key
 									? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
@@ -219,14 +195,8 @@ export default function BettingHistory() {
 									}`}>
 										{bet.type === 'single' ? '단일' : '조합'}
 									</span>
-									<span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-										bet.status === 'pending' 
-											? 'bg-yellow-100 text-yellow-800'
-											: bet.status === 'won'
-											? 'bg-green-100 text-green-800'
-											: 'bg-red-100 text-red-800'
-									}`}>
-										{bet.status === 'pending' ? '진행중' : bet.status === 'won' ? '당첨' : '낙첨'}
+									<span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+										진행중
 									</span>
 								</div>
 								<div className="text-right">
@@ -242,23 +212,13 @@ export default function BettingHistory() {
 									<div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
 										<div>
 											<span className="font-medium">{leg.targetName}</span>
-											<span className="ml-2 text-sm text-gray-600">({leg.examType})</span>
-										</div>
+											</div>
 										<div className="flex items-center space-x-3">
 											<span className={`px-2 py-1 text-xs rounded ${
 												leg.choice === 'pass' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
 											}`}>
 												{leg.choice === 'pass' ? '합격' : '불합격'} ({leg.odds.toFixed(2)}배)
 											</span>
-											{leg.result && (
-												<span className={`px-2 py-1 text-xs rounded font-semibold ${
-													leg.result === leg.choice 
-														? 'bg-green-200 text-green-900' 
-														: 'bg-red-200 text-red-900'
-												}`}>
-													실제: {leg.result === 'pass' ? '합격' : '불합격'}
-												</span>
-											)}
 										</div>
 									</div>
 								))}
@@ -275,13 +235,6 @@ export default function BettingHistory() {
 									<div className="text-lg font-bold text-blue-600">
 										₩{bet.potentialWin.toLocaleString()}
 									</div>
-									{bet.status !== 'pending' && (
-										<div className={`text-sm font-medium ${
-											bet.status === 'won' ? 'text-green-600' : 'text-red-600'
-										}`}>
-											실제: ₩{(bet.actualWin || 0).toLocaleString()}
-										</div>
-									)}
 								</div>
 							</div>
 						</div>

@@ -7,8 +7,10 @@ import AdminDashboard from './components/AdminDashboard';
 
 function App() {
 	const [activeTab, setActiveTab] = useState('players');
-	const [isLoggedIn, setIsLoggedIn] = useState(false);
-	const [userBalance, setUserBalance] = useState(1000000);
+	// DEV 모드에서는 기본적으로 로그인 상태로 시작
+	const isDev = import.meta.env.DEV || import.meta.env.VITE_DEV === '1';
+	const [isLoggedIn, setIsLoggedIn] = useState(isDev);
+	const [userBalance, setUserBalance] = useState(isDev ? 1000000 : 0);
 
 	const handleLogin = () => {
 		setIsLoggedIn(true);
