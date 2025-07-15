@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { apiService, tokenManager } from '../services/api';
 
 interface Bet {
-	id: string;
+	id: number;
 	type: 'single' | 'parlay';
 	amount: number;
 	createdAt: string;
@@ -14,107 +15,113 @@ interface Bet {
 	}[];
 }
 
+interface BettingStats {
+	totalBets: number;
+	totalAmount: number;
+	pending: number;
+	totalPotentialWin: number;
+}
+
 export default function BettingHistory() {
 	const [bets, setBets] = useState<Bet[]>([]);
 	const [filter, setFilter] = useState<'all' | 'pending'>('all');
 	const [loading, setLoading] = useState(true);
+	const [stats, setStats] = useState<BettingStats>({
+		totalBets: 0,
+		totalAmount: 0,
+		pending: 0,
+		totalPotentialWin: 0
+	});
+	const [error, setError] = useState<string | null>(null);
+	const [isLoggedIn, setIsLoggedIn] = useState(false);
 
 	useEffect(() => {
-		// 더미 배팅 내역 데이터
-		setTimeout(() => {
-			setBets([
-				{
-					id: '1',
-					type: 'single',
-					amount: 50000,
-					createdAt: '2024-07-28 14:30',
-					status: 'pending',
-					potentialWin: 92500,
-					legs: [{
-						targetName: '박민수',
-						choice: 'pass',
-						odds: 1.85
-					}]
-				},
-				{
-					id: '2',
-					type: 'parlay',
-					amount: 80000,
-					createdAt: '2024-07-29 09:15',
-					status: 'pending',
-					potentialWin: 276800,
-					legs: [
-						{
-							targetName: '김철수',
-							choice: 'pass',
+		// 로그인 상태 확인
+		const token = tokenManager.getAccessToken();
+		setIsLoggedIn(!!token);
+
+		// 로그인 되어 있으면 배팅 내역 가져오기
+		if (token) {
+			fetchBettingHistory();
+		} else {
+			// 로그인 안 되어 있으면 더미 데이터 사용
+			setTimeout(() => {
+				const dummyBets = [
+					{
+						id: 1,
+						type: 'single' as const,
+						amount: 50000,
+						createdAt: '2024-07-28T14:30:00Z',
+						status: 'pending' as const,
+						potentialWin: 92500,
+						legs: [{
+							targetName: '박민수',
+							choice: 'pass' as const,
 							odds: 1.85
-						},
-						{
-							targetName: '이영희',
-							choice: 'fail',
-							odds: 1.75
-						}
-					]
-				},
-				{
-					id: '3',
-					type: 'single',
-					amount: 100000,
-					createdAt: '2024-07-30 16:45',
-					status: 'pending',
-					potentialWin: 220000,
-					legs: [{
-						targetName: '최지혜',
-						choice: 'fail',
-						odds: 2.2
-					}]
-				},
-				{
-					id: '4',
-					type: 'single',
-					amount: 75000,
-					createdAt: '2024-07-31 11:20',
-					status: 'pending',
-					potentialWin: 142500,
-					legs: [{
-						targetName: '정우진',
-						choice: 'pass',
-						odds: 1.9
-					}]
-				},
-				{
-					id: '5',
-					type: 'parlay',
-					amount: 60000,
-					createdAt: '2024-08-01 13:10',
-					status: 'pending',
-					potentialWin: 228000,
-					legs: [
-						{
-							targetName: '김철수',
-							choice: 'pass',
-							odds: 1.9
-						},
-						{
-							targetName: '정우진',
-							choice: 'fail',
-							odds: 2.0
-						}
-					]
-				}
-			]);
-			setLoading(false);
-		}, 800);
+						}]
+					},
+					{
+						id: 2,
+						type: 'parlay' as const,
+						amount: 80000,
+						createdAt: '2024-07-29T09:15:00Z',
+						status: 'pending' as const,
+						potentialWin: 276800,
+						legs: [
+							{
+								targetName: '김철수',
+								choice: 'pass' as const,
+								odds: 1.85
+							},
+							{
+								targetName: '이영희',
+								choice: 'fail' as const,
+								odds: 1.75
+							}
+						]
+					}
+				];
+				setBets(dummyBets);
+				setStats({
+					totalBets: dummyBets.length,
+					totalAmount: dummyBets.reduce((sum, bet) => sum + bet.amount, 0),
+					pending: dummyBets.length,
+					totalPotentialWin: dummyBets.reduce((sum, bet) => sum + bet.potentialWin, 0)
+				});
+				setLoading(false);
+			}, 500);
+		}
 	}, []);
 
-	const filteredBets = bets.filter(bet => filter === 'all' || bet.status === filter);
-
-	const totalStats = {
-		totalBets: bets.length,
-		totalAmount: bets.reduce((sum, bet) => sum + bet.amount, 0),
-		pending: bets.length,
-		totalPotentialWin: bets.reduce((sum, bet) => sum + bet.potentialWin, 0)
+	const fetchBettingHistory = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+			const data = await apiService.getBettingHistory();
+			setBets(data.bets || []);
+			setStats(data.stats || {
+				totalBets: 0,
+				totalAmount: 0,
+				pending: 0,
+				totalPotentialWin: 0
+			});
+		} catch (error) {
+			console.error('배팅 내역 조회 실패:', error);
+			setError('배팅 내역을 불러올 수 없습니다.');
+			// 에러 시 빈 데이터로 초기화
+			setBets([]);
+			setStats({
+				totalBets: 0,
+				totalAmount: 0,
+				pending: 0,
+				totalPotentialWin: 0
+			});
+		} finally {
+			setLoading(false);
+		}
 	};
+
+	const filteredBets = bets.filter(bet => bet && (filter === 'all' || bet.status === filter));
 
 	if (loading) {
 		return (
@@ -137,18 +144,18 @@ export default function BettingHistory() {
 			<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
 				<div className="bg-white rounded-lg shadow p-4">
 					<div className="text-sm text-gray-600">총 배팅 수</div>
-					<div className="text-2xl font-bold text-blue-600">{totalStats.totalBets}</div>
+					<div className="text-2xl font-bold text-blue-600">{stats.totalBets}</div>
 				</div>
 				<div className="bg-white rounded-lg shadow p-4">
 					<div className="text-sm text-gray-600">총 배팅액</div>
 					<div className="text-2xl font-bold text-purple-600">
-						₩{totalStats.totalAmount.toLocaleString()}
+						₩{stats.totalAmount.toLocaleString()}
 					</div>
 				</div>
 				<div className="bg-white rounded-lg shadow p-4">
 					<div className="text-sm text-gray-600">예상 당첨금</div>
 					<div className="text-2xl font-bold text-green-600">
-						₩{totalStats.totalPotentialWin.toLocaleString()}
+						₩{stats.totalPotentialWin.toLocaleString()}
 					</div>
 				</div>
 			</div>
@@ -157,8 +164,8 @@ export default function BettingHistory() {
 			<div className="mb-6">
 				<div className="flex space-x-2">
 					{[
-						{ key: 'all', label: '전체', count: bets.length },
-						{ key: 'pending', label: '진행중', count: bets.filter(b => b.status === 'pending').length }
+						{ key: 'all', label: '전체', count: stats.totalBets },
+						{ key: 'pending', label: '진행중', count: stats.pending }
 					].map(({ key, label, count }) => (
 						<button
 							key={key}
@@ -200,40 +207,48 @@ export default function BettingHistory() {
 									</span>
 								</div>
 								<div className="text-right">
-									<div className="text-sm text-gray-500">{bet.createdAt}</div>
+									<div className="text-sm text-gray-500">
+										{new Date(bet.createdAt).toLocaleString('ko-KR', {
+											year: 'numeric',
+											month: '2-digit',
+											day: '2-digit',
+											hour: '2-digit',
+											minute: '2-digit'
+										})}
+									</div>
 									<div className="text-lg font-bold text-gray-900">
-										₩{bet.amount.toLocaleString()}
+										₩{(bet.amount || 0).toLocaleString()}
 									</div>
 								</div>
 							</div>
 
 							<div className="space-y-3 mb-4">
-								{bet.legs.map((leg, index) => (
+								{bet.legs?.map((leg, index) => (
 									<div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
 										<div>
-											<span className="font-medium">{leg.targetName}</span>
+											<span className="font-medium">{leg?.targetName || '알 수 없음'}</span>
 											</div>
 										<div className="flex items-center space-x-3">
 											<span className={`px-2 py-1 text-xs rounded ${
-												leg.choice === 'pass' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+												leg?.choice === 'pass' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
 											}`}>
-												{leg.choice === 'pass' ? '합격' : '불합격'} ({leg.odds.toFixed(2)}배)
+												{leg?.choice === 'pass' ? '합격' : '불합격'} ({(leg?.odds || 0).toFixed(2)}배)
 											</span>
 										</div>
 									</div>
-								))}
+								)) || []}
 							</div>
 
 							<div className="flex justify-between items-end">
 								<div>
 									<div className="text-sm text-gray-600">
-										총 배당률: {bet.legs.reduce((acc, leg) => acc * leg.odds, 1).toFixed(2)}배
+										총 배당률: {(bet.legs?.reduce((acc, leg) => acc * (leg?.odds || 1), 1) || 1).toFixed(2)}배
 									</div>
 								</div>
 								<div className="text-right">
 									<div className="text-sm text-gray-600">예상 당첨금</div>
 									<div className="text-lg font-bold text-blue-600">
-										₩{bet.potentialWin.toLocaleString()}
+										₩{(bet.potentialWin || 0).toLocaleString()}
 									</div>
 								</div>
 							</div>
