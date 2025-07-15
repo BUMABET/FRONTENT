@@ -58,7 +58,7 @@ export default function BettingForm({ isLoggedIn, userBalance, onBalanceUpdate }
 		fetchPlayers();
 	}, []);
 
-	const handlePlayerSelect = (playerId: string, checked: boolean) => {
+	const handlePlayerSelect = (playerId: number, checked: boolean) => {
 		if (checked) {
 			const player = players.find(p => p.id === playerId);
 			if (player && !selectedPlayers.some(p => p.id === playerId)) {
@@ -69,19 +69,19 @@ export default function BettingForm({ isLoggedIn, userBalance, onBalanceUpdate }
 		}
 	};
 
-	const handleChoiceChange = (playerId: string, choice: 'pass' | 'fail') => {
+	const handleChoiceChange = (playerId: number, choice: 'pass' | 'fail') => {
 		setSelectedPlayers(selectedPlayers.map(p => 
 			p.id === playerId ? { ...p, choice } : p
 		));
 	};
 
-	const handleBetAmountChange = (playerId: string, amount: number) => {
+	const handleBetAmountChange = (playerId: number, amount: number) => {
 		setSelectedPlayers(selectedPlayers.map(p => 
 			p.id === playerId ? { ...p, betAmount: amount } : p
 		));
 	};
 
-	const removeSelectedPlayer = (playerId: string) => {
+	const removeSelectedPlayer = (playerId: number) => {
 		setSelectedPlayers(selectedPlayers.filter(p => p.id !== playerId));
 	};
 

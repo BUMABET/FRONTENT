@@ -32,13 +32,9 @@ export default function BettingHistory() {
 		pending: 0,
 		totalPotentialWin: 0
 	});
-	const [error, setError] = useState<string | null>(null);
-	const [isLoggedIn, setIsLoggedIn] = useState(false);
-
 	useEffect(() => {
 		// 로그인 상태 확인
 		const token = tokenManager.getAccessToken();
-		setIsLoggedIn(!!token);
 
 		// 로그인 되어 있으면 배팅 내역 가져오기
 		if (token) {
@@ -96,7 +92,6 @@ export default function BettingHistory() {
 	const fetchBettingHistory = async () => {
 		try {
 			setLoading(true);
-			setError(null);
 			const data = await apiService.getBettingHistory();
 			setBets(data.bets || []);
 			setStats(data.stats || {
@@ -107,7 +102,6 @@ export default function BettingHistory() {
 			});
 		} catch (error) {
 			console.error('배팅 내역 조회 실패:', error);
-			setError('배팅 내역을 불러올 수 없습니다.');
 			// 에러 시 빈 데이터로 초기화
 			setBets([]);
 			setStats({
