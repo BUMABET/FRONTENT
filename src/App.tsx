@@ -3,7 +3,6 @@ import Header from './components/Header';
 import PlayerList from './components/PlayerList';
 import BettingForm from './components/BettingForm';
 import BettingHistory from './components/BettingHistory';
-import AdminDashboard from './components/AdminDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import { apiService, tokenManager } from './services/api';
 
@@ -99,7 +98,7 @@ function App() {
 			<nav className="bg-white shadow-sm border-b">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div className="flex space-x-8">
-						{['players', 'betting', 'history', 'admin'].map((tab) => (
+						{['players', 'betting', 'history'].map((tab) => (
 							<button
 								key={tab}
 								onClick={() => setActiveTab(tab)}
@@ -112,7 +111,6 @@ function App() {
 								{tab === 'players' && '플레이어'}
 								{tab === 'betting' && '배팅하기'}
 								{tab === 'history' && '배팅 내역'}
-								{tab === 'admin' && '관리자'}
 							</button>
 						))}
 					</div>
@@ -125,7 +123,6 @@ function App() {
 						{activeTab === 'players' && <PlayerList />}
 						{activeTab === 'betting' && <BettingForm isLoggedIn={isLoggedIn} userBalance={userBalance} onBalanceUpdate={setUserBalance} />}
 						{activeTab === 'history' && <BettingHistory />}
-						{activeTab === 'admin' && <AdminDashboard />}
 					</ErrorBoundary>
 				</div>
 			</main>
